@@ -6,12 +6,13 @@ public class Grapple : MonoBehaviour
 {
     private LineRenderer lr;
     private Vector3 grapplePoint;
-    private float maxDistance = 200f;
+    private float maxDistance = 15f;
     private SpringJoint joint;
     public LayerMask grappleable;
     public Transform hookTip, cam, pl;
-
-
+    private float hitDistance;  //variable used for debugging the spherecast and visualizing it
+    private Vector3 origin;
+    public float castHeight = 3f;       //variable that determines the height from the player that the sphereCast will start at
 
     private void Awake()
     {
@@ -20,6 +21,9 @@ public class Grapple : MonoBehaviour
 
     private void Update()
     {
+        //origin = pl.position;
+
+        //origin.y += 5f;
         if (Input.GetMouseButtonDown(0))
         {
             //StartGrapple();
@@ -34,7 +38,6 @@ public class Grapple : MonoBehaviour
 
     private void LateUpdate()
     {
-        Debug.DrawRay(transform.position, cam.forward);
         DrawRope();
     }
 
@@ -66,13 +69,13 @@ public class Grapple : MonoBehaviour
     void StartGrappleCapsuleCast()
     {
         RaycastHit hit;
-        Vector3 distance;
-        distance = cam.position + Vector3.forward * 200f;
-        Debug.Log(cam.position);
+        Vector3 distance = pl.position;
+        distance.z += maxDistance;
         Debug.Log(distance);
-        if (Physics.CapsuleCast(cam.position, distance, 10f, cam.forward, out hit, grappleable))
+        if (Physics.CapsuleCast(pl.position, distance, 10f, cam.forward, out hit, grappleable))
         {
             grapplePoint = hit.point;
+            hitDistance = hit.distance;
             joint = pl.gameObject.AddComponent<SpringJoint>();
             joint.autoConfigureConnectedAnchor = false;
             joint.connectedAnchor = grapplePoint;
@@ -95,18 +98,19 @@ public class Grapple : MonoBehaviour
     {
         RaycastHit hit;
 
-        Vector3 origin = pl.position;
+        origin = pl.position;
 
-        origin.y += 5f;
+        origin.y += castHeight;
 
-        if (Physics.SphereCast(origin, 5f, cam.forward, out hit, maxDistance, grappleable))
+        if (Physics.SphereCast(origin, 2f, Quaternion.Euler(-10f, 0, 0) * cam.forward, out hit, maxDistance, grappleable))
         {
             grapplePoint = hit.point;
+            //hitDistance = hit.distance;
             joint = pl.gameObject.AddComponent<SpringJoint>();
             joint.autoConfigureConnectedAnchor = false;
             joint.connectedAnchor = grapplePoint;
 
-            float distFromPt = Vector3.Distance(pl.position, grapplePoint);
+            float distFromPt = Vector3.Distance(origin, grapplePoint);
 
             joint.maxDistance = distFromPt * 0.8f;
             joint.minDistance = distFromPt * 0.25f;
